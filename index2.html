@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>건빵이 키우기</title>
+  <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-image: url('background.jpg');
+      background-size: cover;
+      text-align: center;
+      font-family: 'Gaegu', Pretendard, sans-serif;
+    }
+
+    #start-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('start.png');
+      background-size: cover;
+      background-color: rgba(255, 255, 255, 0.9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+
+    #start-screen h1 {
+      font-size: 5em;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 20px;
+    }
+
+    #start-screen button {
+      font-size: 1.5em;
+      padding: 10px 20px;
+      background-color: #f9c2ff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    #start-screen button:hover {
+      background-color: #f7a1f8;
+    }
+
+    .container {
+      position: relative;
+      width: 1200px;
+      height: 1200px;
+      margin: 0 auto;
+      display: none;
+    }
+
+    .small-images {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .small-images img {
+      width: 50px;
+      margin-bottom: 10px;
+      cursor: grab;
+    }
+
+    .hamster, .house, .food, .wheel {
+      position: absolute;
+      transition: transform 0.3s;
+    }
+
+    .hamster {
+      top: 350px;
+      left: 400px;
+      width: 400px;
+    }
+
+    .house, .food, .wheel {
+      display: none;
+    }
+
+    .house {
+      top: 200px;
+      left: 200px;
+      width: 300px;
+    }
+
+    .food {
+      top: 200px;
+      left: 700px;
+      width: 300px;
+    }
+
+    .wheel {
+      top: 650px;
+      left: 500px;
+      width: 300px;
+    }
+
+    #popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 20px;
+      border: 2px solid #000;
+    }
+
+    #sound-icon {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      cursor: pointer;
+      z-index: 20;
+    }
+
+    button {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 시작 화면 -->
+  <div id="start-screen">
+    <h1>건빵이 키우기</h1>
+    <button id="start-btn">시작하기</button>
+  </div>
+
+  <!-- 메인 게임 화면 -->
+  <div class="container">
+    <!-- 드래그할 작은 이미지들 -->
+    <div class="small-images">
+      <img src="small_house.png" alt="작은 집" id="small-house" draggable="true">
+      <img src="small_food.png" alt="작은 밥통" id="small-food" draggable="true">
+      <img src="small_wheel.png" alt="작은 쳇바퀴" id="small-wheel" draggable="true">
+    </div>
+
+    <img src="ham.png" alt="햄스터" class="hamster" id="hamster">
+    <img src="house.png" alt="햄스터 집" class="house" id="house">
+    <img src="food.png" alt="밥통" class="food" id="food">
+    <img src="wheel.png" alt="쳇바퀴" class="wheel" id="wheel">
+    <img src="sound.png" alt="소리 아이콘" id="sound-icon"> 
+  </div>
+
+  <audio id="eat-sound" src="foodsound.mp3" preload="auto"></audio> 
+  <audio id="sleep-sound" src="sleep.mp3" preload="auto"></audio> 
+  <audio id="wheel-sound" src="wheel.mp3" preload="auto"></audio> 
+  <audio id="bg-music" src="background.mp3" preload="auto" loop></audio> 
+
+  <div id="popup">
+    <p>건빵이와의 호감도가 +3 올랐습니다!</p>
+    <button id="reset">다시 처음으로</button>
+  </div>
+
+<script>
+const startScreen = document.getElementById('start-screen');
+const startBtn = document.getElementById('start-btn');
+const container = document.querySelector('.container');
+const house = document.getElementById('house');
+const food = document.getElementById('food');
+const wheel = document.getElementById('wheel');
+const popup = document.getElementById('popup');
+const resetBtn = document.getElementById('reset');
+const bgMusic = document.getElementById('bg-music');
+const soundIcon = document.getElementById('sound-icon');
+
+let isMusicPlaying = false;
+
+// 작은 이미지들
+const smallHouse = document.getElementById('small-house');
+const smallFood = document.getElementById('small-food');
+const smallWheel = document.getElementById('small-wheel');
+
+// 드래그 앤 드롭 이벤트 핸들러
+function allowDrop(event) {
+  event.preventDefault();
+}
+
+function drag(event) {
+  event.dataTransfer.setData('id', event.target.id);
+}
+
+function drop(event) {
+  event.preventDefault();
+  const draggedId = event.dataTransfer.getData('id');
+
+  if (draggedId === 'small-house') {
+    house.style.display = 'block';
+    sleepSound.play();
+    showPopup();
+  } else if (draggedId === 'small-food') {
+    food.style.display = 'block';
+    eatSound.play();
+    showPopup();
+  } else if (draggedId === 'small-wheel') {
+    wheel.style.display = 'block';
+    wheelSound.play();
+    showPopup();
+  }
+}
+
+startBtn.addEventListener('click', () => {
+  startScreen.style.display = 'none';
+  container.style.display = 'block';
+
+  // 배경 음악 재생
+  bgMusic.currentTime = 0; // 음악 시작 위치를 처음으로
+  bgMusic.play().catch(error => {
+    console.log("음악 재생 실패:", error);
+  });
+});
+
+smallHouse.addEventListener('dragstart', drag);
+smallFood.addEventListener('dragstart', drag);
+smallWheel.addEventListener('dragstart', drag);
+
+container.addEventListener('dragover', allowDrop);
+container.addEventListener('drop', drop);
+
+soundIcon.addEventListener('click', () => {
+  if (isMusicPlaying) {
+    bgMusic.pause();
+  } else {
+    bgMusic.play().catch(error => {
+      console.log("음악 재생 실패:", error);
+    });
+  }
+  isMusicPlaying = !isMusicPlaying;
+});
+
+// 팝업을 보여주는 함수
+function showPopup() {
+  popup.style.display = 'block';
+}
+
+// 리셋 버튼 클릭 시 초기화
+resetBtn.addEventListener('click', () => {
+  popup.style.display = 'none';
+  house.style.display = 'none';
+  food.style.display = 'none';
+  wheel.style.display = 'none';
+  container.style.display = 'none';
+  startScreen.style.display = 'flex';
+  isMusicPlaying = false;
+});
+
+</script>
+</body>
+</html>
+
+
